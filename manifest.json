@@ -1,5 +1,6 @@
 {
   "name": "DARB",
+  "id": "/Darb/",
   "short_name": "DARB",
   "description": "DARB",
   "start_url": "./index.html",
