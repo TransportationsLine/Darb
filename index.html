@@ -321,6 +321,9 @@ body.has-install-bar #bookConfirmBar { bottom: 62px; }
   font-family: 'Cairo', sans-serif; font-size: 14px;
 }
 body.has-install-bar { padding-bottom: 80px; }
+.av-info { background:#f8fafb; border:1px solid #dee2e6; border-radius:10px; padding:10px 12px; font-size:.88rem; display:grid; gap:4px; }
+.av-info b { color:#0f3d3e; }
+.av-thumb { width:84px; height:84px; object-fit:cover; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -520,6 +523,7 @@ body.has-install-bar { padding-bottom: 80px; }
             <div class="form-check">
               <input id="vShow" type="checkbox" class="form-check-input" checked>
               <label class="form-check-label" for="vShow">إظهار الطلب في صفحة العرض</label>
+              <div id="vShowNote" class="alert alert-danger py-2 small mt-2 hidden"></div>
             </div>
           </div>
           </div>
@@ -550,14 +554,71 @@ body.has-install-bar { padding-bottom: 80px; }
   <div class="mbox" style="max-width:1100px;">
     <div class="mhead"><h5><i class="fas fa-user-shield me-2"></i>الإدارة</h5><button onclick="closeModal('adminModal')">&times;</button></div>
     <div class="mbody">
-      <input id="aSearch" class="form-control mb-2" placeholder="بحث بالاسم أو الهاتف..." oninput="renderAdmin()">
-      <div class="tbl-wrap">
-        <table class="table table-bordered table-hover align-middle text-center">
-          <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>المنطقة / الولاية</th><th>مركبة</th><th>الحالة</th><th>تاريخ الانتهاء</th><th>كلمة مرور جديدة</th><th>إجراءات</th></tr></thead>
-          <tbody id="adminBody"></tbody>
-        </table>
-      </div>
+  <div class="d-flex gap-2 mb-3">
+    <button id="tabUsers" type="button" class="btn btn-sm btn-main" onclick="adminTab('users')"><i class="fas fa-users me-1"></i>المستخدمون</button>
+    <button id="tabReqs" type="button" class="btn btn-sm btn-outline-secondary" onclick="adminTab('reqs')"><i class="fas fa-clipboard-list me-1"></i>الطلبات</button>
+  </div>
+
+  <!-- المستخدمون (المحتوى القديم كما هو) -->
+  <div id="adminUsersPane">
+    <input id="aSearch" class="form-control mb-2" placeholder="بحث بالاسم أو الهاتف..." oninput="renderAdmin()">
+    <div class="tbl-wrap">
+      <table class="table table-bordered table-hover align-middle text-center">
+        <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>المنطقة / الولاية</th><th>مركبة</th><th>الحالة</th><th>تاريخ الانتهاء</th><th>كلمة مرور جديدة</th><th>إجراءات</th></tr></thead>
+        <tbody id="adminBody"></tbody>
+      </table>
     </div>
+  </div>
+
+  <!-- الطلبات -->
+  <div id="adminReqsPane" class="hidden">
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-md-3"><input id="rSearch" class="form-control" placeholder="بحث بالاسم أو الرقم..." oninput="renderReqs()"></div>
+      <div class="col-6 col-md-3"><select id="rService" class="form-select" onchange="renderReqs()"><option value="">كل الخدمات</option></select></div>
+      <div class="col-6 col-md-3"><select id="rKind" class="form-select" onchange="renderReqs()"><option value="">كل الأنواع</option></select></div>
+      <div class="col-12 col-md-3"><input id="rDesc" class="form-control" placeholder="بحث بالوصف..." oninput="renderReqs()"></div>
+    </div>
+    <div class="small text-muted mb-2"><span>العدد:</span> <b id="rCount">0</b></div>
+    <div class="tbl-wrap">
+      <table class="table table-bordered table-hover align-middle text-center" style="min-width:900px;">
+        <thead><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>الخدمة</th><th>النوع</th><th>الوصف</th><th>الوجهة</th><th>التواجد</th><th>الظهور</th><th>ملاحظات المدير</th><th>تم التعديل</th><th>الإجراءات</th></thead>
+        <tbody id="reqBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<div id="adminVehModal" class="ovl hidden">
+  <div class="mbox" style="max-width:640px;">
+    <div class="mhead"><h5><i class="fas fa-edit me-2"></i>تعديل الطلب</h5><button onclick="closeModal('adminVehModal')">&times;</button></div>
+    <div class="mbody">
+      <div id="avInfo" class="av-info mb-3"></div>
+      <label>صور الطلب</label>
+      <div id="avPhotos" class="d-flex gap-2 mb-3 flex-wrap"></div>
+
+      <div class="row g-3">
+        <div class="col-6"><label>الخدمة</label><select id="avService" class="form-select"></select></div>
+        <div class="col-6"><label>النوع</label><select id="avKind" class="form-select"></select></div>
+        <div class="col-12"><label>الوصف <small class="text-muted">(اختياري، حتى 50 حرفاً)</small></label>
+          <input id="avName" class="form-control" maxlength="50"></div>
+        <div class="col-12"><label>الظهور</label>
+          <select id="avShow" class="form-select">
+            <option value="1">ظاهر</option>
+            <option value="0">مخفي (لا يستطيع المستخدم إظهاره)</option>
+          </select></div>
+        <div class="col-12"><label>ملاحظات المدير <small class="text-muted">(سبب الإخفاء، تظهر للمستخدم)</small></label>
+          <textarea id="avNote" class="form-control" rows="2" maxlength="200" placeholder="اكتب سبب الإخفاء..."></textarea></div>
+      </div>
+      <div id="avErr" class="err"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-success" onclick="saveAdminVeh()"><i class="fas fa-save me-1"></i>حفظ</button>
+      <button class="btn btn-secondary" onclick="closeModal('adminVehModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
     <div class="mfoot"><button class="btn btn-secondary" onclick="closeModal('adminModal')">إغلاق</button></div>
   </div>
 </div>
@@ -646,7 +707,7 @@ body.has-install-bar { padding-bottom: 80px; }
 // الإعدادات: ضع رابط الـ Web App (ينتهي بـ /exec)
 // =====================================================================
 const USERS_API_URL    = 'https://script.google.com/macros/s/AKfycbyfA0DQoAEBm36udnbA27pWc0xtJhAVjUjCM15-GTAl6ISt1SFtjBR6W6max17CUV5SlA/exec';     // سكربت المستخدمين
-const VEHICLES_API_URL = 'https://script.google.com/macros/s/AKfycbwYdDazXuLLpW5Hxwm0xG737pdASwJMg7uGe6EZnDS6VTGqLot02Ir_n_H-BRVMmIfOww/exec'; // سكربت المركبات
+const VEHICLES_API_URL = 'https://script.google.com/macros/s/AKfycbyYv8ZfiVJuHIjFPj4aNfrM3s8qlUQWKwBtYyBTYMomgrVBQEqwHfjIpAy5ic786ystkw/exec'; // سكربت المركبات
 
 const OMAN = {
   'مسقط': ['مسقط','مطرح','بوشر','السيب','العامرات','قريات'],
@@ -786,9 +847,15 @@ const EN = {
   'العين':'Al Ain','الظفرة':'Al Dhafra','جبل علي':'Jebel Ali','حتا':'Hatta','خورفكان':'Khorfakkan','كلباء':'Kalba','دبا الحصن':'Dibba Al Hisn','الذيد':'Al Dhaid','المدام':'Madam',
   'مصفوت':'Masfout','المنامة':'Manama','فلج المعلا':'Falaj Al Mualla','خور خوير':'Khor Khwair','الجيري':'Al Jeer','الدقداقة':'Al Daqdaqah','دبا الفجيرة':'Dibba Al Fujairah','مربح':'Murbah',
   'مكة المكرمة':'Makkah','المدينة المنورة':'Madinah','الرياض':'Riyadh','الطائف':'Taif','جدة':'Jeddah','رابغ':'Rabigh','الليث':'Al Lith','ينبع':'Yanbu','العلا':'AlUla','بدر':'Badr',
-  'الخرج':'Al Kharj','الدوادمي':'Dawadmi','المجمعة':'Al Majmaah','نسيت كلمة المرور؟':'Forgot password?',
+  'الخرج':'Al Kharj','الدوادمي':'Dawadmi','المجمعة':'Al Majmaah','نسيت كلمة المرور؟':'Forgot password?', 'الطلبات':'Requests','المستخدمون':'Users','العدد:':'Count:','بحث بالاسم أو الرقم...':'Search by name or number...',
+'بحث بالوصف...':'Search by description...','لا توجد طلبات':'No requests','تعديل الطلب':'Edit request','مخفي من الإدارة':'Hidden by admin','مخفي (لا يستطيع المستخدم إظهاره)':'Hidden (user cannot show it)',
+'تم إخفاء هذه الخدمة من الإدارة ولا يمكن إظهارها':'This service was hidden by the admin and cannot be shown',
+'(اختياري، حتى 50 حرفاً)':'(optional, up to 50 characters)',
   'أضف وصفاً':'Add a description','اختياري، حتى 50 حرفاً':'optional, up to 50 characters','...أضف الوصف هنا':'Add description here...','اختر صورة':'Choose an image','أضف صورة':'Add an image','حذف الصورة':'Remove image','اختر صورة صالحة':'Choose a valid image',
-  'الصورة كبيرة جداً (الحد 8MB)':'Image too large (max 8MB)','تعذر قراءة الملف':'Could not read the file','تعذر قراءة الصورة':'Could not read the image','اختر المنطقة أولاً':'Select a region first','لا توجد نتائج':'No results','اختر ولاية من القائمة':'Choose a state from the list'
+  'الصورة كبيرة جداً (الحد 8MB)':'Image too large (max 8MB)','تعذر قراءة الملف':'Could not read the file','تعذر قراءة الصورة':'Could not read the image','اختر المنطقة أولاً':'Select a region first','لا توجد نتائج':'No results','اختر ولاية من القائمة':'Choose a state from the list',
+  'ملاحظات المدير':'Admin notes','تم التعديل':'Updated','صاحب الطلب':'Owner','الوقت':'Time','صور الطلب':'Request photos',
+'لا توجد صور':'No photos','ملاحظة من الإدارة':'Note from admin','(سبب الإخفاء، تظهر للمستخدم)':'(reason for hiding, shown to the user)',
+'اكتب سبب الإخفاء':'Write the reason for hiding','اكتب سبب الإخفاء...':'Write the reason for hiding...'
 };
 
 const AR_RE = /[\u0600-\u06FF]/;
@@ -1832,7 +1899,8 @@ function renderServices() {
       <td>${esc(s.kind)}</td>
       <td>${esc(s.name || '—')}</td>
       <td>${esc(s.available || '—')}${s.from || s.to ? `<div class="small text-muted">${esc(fmt12(s.from) || '—')} - ${esc(fmt12(s.to) || '—')}</div>` : ''}</td>
-      <td>${s.show ? '<span class="badge bg-success">ظاهر</span>' : '<span class="badge bg-secondary">مخفي</span>'}</td>
+     <td>${s.adminHidden ? '<span class="badge bg-danger">مخفي من الإدارة</span>' : s.show ? '<span class="badge bg-success">ظاهر</span>' : '<span class="badge bg-secondary">مخفي</span>'}
+  ${s.adminNote ? `<div class="small text-danger mt-1"><i class="fas fa-info-circle"></i> ${esc(s.adminNote)}</div>` : ''}</td>
    <td class="act-cell">
   <button class="btn btn-primary btn-sm" onclick="editService('${esc(s.vid)}')" title="تعديل"><i class="fas fa-edit"></i><span class="lbl"></span></button>
   <button class="btn btn-danger btn-sm" onclick="deleteService('${esc(s.vid)}')" title="حذف"><i class="fas fa-trash"></i><span class="lbl"></span></button>
@@ -1880,6 +1948,15 @@ async function showServiceForm(s) {
   $('vService').value = s ? s.service : '';
   fillKinds(s ? s.kind : '');
   $('vName').value = s ? (s.name || '') : '';
+$('vShow').checked = s ? !!s.show : true;
+$('vShow').disabled = !!(s && s.adminHidden);
+const note = s ? (s.adminNote || '') : '';
+const box = $('vShowNote');
+box.classList.toggle('hidden', !(s && (s.adminHidden || note)));
+if (s) box.innerHTML =
+  `<b>${s.adminHidden ? 'تم إخفاء هذه الخدمة من الإدارة ' : 'ملاحظة من الإدارة'}</b>` +
+  (note ? `<div>${esc(note)}</div>` : '');
+if (LANG === 'en') applyNode(box);
   updDescCount();
   setTime12('vFrom', s ? s.from : '');
   setTime12('vTo', s ? s.to : '');
@@ -1952,8 +2029,9 @@ console.log('available =', buildAvailableText(), vDays);
 
 // ---------------- الإدارة ----------------
 async function openAdmin() {
+  adminTab('users'); 
   openModal('adminModal');
-  $('adminBody').innerHTML = '<tr><td colspan="9"><span class="spinner-border spinner-border-sm"></span> جاري التحميل...</td></tr>';
+  $('adminBody').innerHTML = '<tr><td colspan=""><span class="spinner-border spinner-border-sm"></span> جاري التحميل...</td></tr>';
   try {
     const [ur, vr] = await Promise.all([api('adminListUsers'), api('listVehicleIds', {}, 'vehicles')]);
     const withVeh = {};
@@ -2037,6 +2115,185 @@ async function deleteMyAccount() {
   } finally {
     setSaving('profileSaving', false);
   }
+}
+
+// ---------------- طلبات الإدارة ----------------
+let adminReqs = [];
+
+function adminTab(t) {
+  const u = t === 'users';
+  $('adminUsersPane').classList.toggle('hidden', !u);
+  $('adminReqsPane').classList.toggle('hidden', u);
+  $('tabUsers').className = 'btn btn-sm ' + (u ? 'btn-main' : 'btn-outline-secondary');
+  $('tabReqs').className  = 'btn btn-sm ' + (u ? 'btn-outline-secondary' : 'btn-main');
+  if (!u) loadAdminReqs();
+}
+
+function initReqFilters() {
+  if ($('rService').options.length > 1) return;
+  SERVICES.forEach(s => $('rService').add(new Option(s, s)));
+  [...DRIVER_KINDS, ...VEHICLE_KINDS, ...ROADSIDE_KINDS].forEach(k => $('rKind').add(new Option(k, k)));
+  if (LANG === 'en') applyNode($('adminReqsPane'));
+}
+
+async function loadAdminReqs() {
+  initReqFilters();
+  $('reqBody').innerHTML = '<tr><td colspan="10"><span class="spinner-border spinner-border-sm"></span> جاري التحميل...</td></tr>';
+  try {
+    const [ur, vr] = await Promise.all([api('adminListUsers'), api('adminListVehicles', {}, 'vehicles')]);
+    const users = {};
+    (ur.data || []).forEach(u => { users[u.id] = u; });
+    adminReqs = (vr.data || []).slice().reverse().map(v => ({
+      ...v,
+      userName: (users[v.id] || {}).name || '',
+      phone: (users[v.id] || {}).phone || '',
+      loc: [(users[v.id] || {}).region, (users[v.id] || {}).state].filter(Boolean).join(' / ')
+    }));
+    renderReqs();
+  } catch (err) {
+    $('reqBody').innerHTML = `<tr><td colspan="10" class="text-danger">${esc(err.message)}</td></tr>`;
+  }
+}
+
+function renderReqs() {
+  const q = $('rSearch').value.trim().toLowerCase();
+  const qd = q.replace(/[^\d]/g, '');
+  const fs = $('rService').value, fk = $('rKind').value;
+  const fd = $('rDesc').value.trim().toLowerCase();
+
+  const list = adminReqs.filter(r => {
+    if (fs && r.service !== fs) return false;
+    if (fk && r.kind !== fk) return false;
+    if (fd && !(r.name || '').toLowerCase().includes(fd)) return false;
+    if (q) {
+      const byName = (r.userName || '').toLowerCase().includes(q);
+      const byPhone = qd && String(r.phone).replace(/[^\d]/g, '').includes(qd);
+      if (!byName && !byPhone) return false;
+    }
+    return true;
+  });
+
+  $('rCount').textContent = list.length;
+  if (!list.length) { $('reqBody').innerHTML = '<tr><td colspan="10" class="text-muted py-4">لا توجد طلبات</td></tr>'; return; }
+
+  $('reqBody').innerHTML = list.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${esc(r.userName || '—')}</td>
+      <td style="direction:ltr;">${esc(r.phone || '—')}</td>
+      <td>${esc(r.service)}</td>
+      <td>${esc(r.kind)}</td>
+      <td>${esc(r.name || '—')}</td>
+      <td>${esc(r.destination || '—')}</td>
+      <td>${esc(r.available || '—')}${r.from || r.to ? `<div class="small text-muted">${esc(fmt12(r.from) || '—')} - ${esc(fmt12(r.to) || '—')}</div>` : ''}</td>
+  <td>${r.adminHidden ? '<span class="badge bg-danger">مخفي من الإدارة</span>' : r.show ? '<span class="badge bg-success">ظاهر</span>' : '<span class="badge bg-secondary">مخفي</span>'}</td>
+<td class="small" style="min-width:150px; white-space:normal;">${esc(r.adminNote || '—')}</td>
+<td>${r.userUpdated ? '<span class="badge bg-warning text-dark">تم التعديل</span>' : '—'}</td>
+<td class="act-cell">
+  <button class="btn btn-primary btn-sm" onclick="openAdminVeh('${esc(r.vid)}')" title="تعديل"><i class="fas fa-edit"></i><span class="lbl"> تعديل</span></button>
+  <button class="btn btn-danger btn-sm" onclick="adminDeleteReq('${esc(r.vid)}')" title="حذف"><i class="fas fa-trash"></i><span class="lbl"> حذف</span></button>
+</td>
+    </tr>`).join('');
+  if (LANG === 'en') applyNode($('reqBody'));
+}
+
+let avVid = '';
+
+function kindsFor(svc) {
+  return svc === 'سائق' ? DRIVER_KINDS : svc === 'خدمة على الطريق' ? ROADSIDE_KINDS : VEHICLE_KINDS;
+}
+function fillAvKinds(selected) {
+  const k = $('avKind');
+  k.innerHTML = '';
+  k.add(new Option('اختر النوع', ''));
+  kindsFor($('avService').value).forEach(x => k.add(new Option(x, x)));
+  if (selected) k.value = selected;
+  if (LANG === 'en') applyNode(k);
+}
+
+let avPhotoList = [];
+
+function openAdminVeh(vid) {
+  const r = adminReqs.find(x => String(x.vid) === String(vid));
+  if (!r) return;
+  avVid = r.vid;
+  hideErr('avErr');
+  const s = $('avService');
+  if (s.options.length < 1) {
+    SERVICES.forEach(x => s.add(new Option(x, x)));
+    s.addEventListener('change', () => fillAvKinds());
+  }
+  s.value = r.service;
+  fillAvKinds(r.kind);
+  $('avName').value = r.name || '';
+  $('avShow').value = r.adminHidden ? '0' : '1';
+  $('avNote').value = r.adminNote || '';
+
+  // بيانات الطلب كاملة (للقراءة)
+  const av = splitAvail(r.available);
+  const timeTxt = av.byCall ? '—' : ((r.from || r.to) ? `من ${fmt12(r.from) || '—'} إلى ${fmt12(r.to) || '—'}` : 'على مدار الساعة');
+  const row = (label, val) => `<div><b>${label}</b><span>: </span>${esc(val || '—')}</div>`;
+  $('avInfo').innerHTML =
+    row('صاحب الطلب', `${r.userName || '—'} - ${r.phone || ''}`) +
+    row('المنطقة / الولاية', r.loc) +
+    row('الوجهة', r.destination) +
+    row('التواجد', r.available) +
+    row('الوقت', timeTxt);
+
+  // الصور
+  avPhotoList = [];
+  $('avPhotos').innerHTML = r.hasPhoto
+    ? '<span class="spinner-border spinner-border-sm"></span>'
+    : '<span class="text-muted small">لا توجد صور</span>';
+  if (r.hasPhoto) loadAvPhotos(r.vid, r.id);
+
+  openModal('adminVehModal');
+  if (LANG === 'en') applyNode($('adminVehModal'));
+}
+
+async function loadAvPhotos(vid, id) {
+  try {
+    const ph = (await api('getVehiclePhotos', { vid, id }, 'vehicles')).photos || [];
+    if (avVid !== vid) return;                       // أُغلقت أو فُتح طلب آخر
+    avPhotoList = ph;
+    $('avPhotos').innerHTML = ph.length
+      ? ph.map((p, i) => `<img class="av-thumb" src="${p}" onclick="openZoom(avPhotoList, ${i})" alt="">`).join('')
+      : '<span class="text-muted small">لا توجد صور</span>';
+    if (LANG === 'en') applyNode($('avPhotos'));
+  } catch (e) { $('avPhotos').innerHTML = ''; }
+}
+
+async function saveAdminVeh() {
+  hideErr('avErr');
+  const service = $('avService').value, kind = $('avKind').value;
+  const hidden = $('avShow').value === '0';
+  const note = $('avNote').value.trim();
+  if (!service) return showErr('avErr', 'اختر الخدمة');
+  if (!kind) return showErr('avErr', 'اختر النوع');
+  if (hidden && !note) return showErr('avErr', 'اكتب سبب الإخفاء');
+  try {
+    await api('adminUpdateVehicle', {
+      vid: avVid, service, kind,
+      name: $('avName').value.trim().slice(0, 50),
+      hidden, note
+    }, 'vehicles');
+    closeModal('adminVehModal');
+    toast('تم حفظ التعديل');
+    loadAdminReqs();
+    loadVehicles();
+  } catch (err) { showErr('avErr', err.message); }
+}
+
+async function adminDeleteReq(vid) {
+  const r = adminReqs.find(x => String(x.vid) === String(vid));
+  if (!(await askConfirm({ title: 'حذف الخدمة', message: `حذف الخدمة "${r ? r.service + ' - ' + r.kind : ''}"؟`, okText: 'حذف' }))) return;
+  try {
+    await api('deleteVehicle', { vid }, 'vehicles');
+    delete photoCache[vid];
+    toast('تم حذف الخدمة');
+    loadAdminReqs();
+    loadVehicles();
+  } catch (err) { toast(err.message, 'error', 3500); }
 }
 
 // إغلاق النوافذ بـ ESC
