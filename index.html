@@ -2224,8 +2224,8 @@ function renderReqs() {
 <td class="small" style="min-width:150px; white-space:normal;">${esc(r.adminNote || '—')}</td>
 <td>${r.userUpdated ? '<span class="badge bg-warning text-dark">تم التعديل</span>' : '—'}</td>
 <td class="act-cell">
-  <button class="btn btn-primary btn-sm" onclick="openAdminVeh('${esc(r.vid)}')" title="تعديل"><i class="fas fa-edit"></i><span class="lbl"> تعديل</span></button>
-  <button class="btn btn-danger btn-sm" onclick="adminDeleteReq('${esc(r.vid)}')" title="حذف"><i class="fas fa-trash"></i><span class="lbl"> حذف</span></button>
+  <button class="btn btn-primary btn-sm" onclick="openAdminVeh('${esc(r.vid)}')" title="تعديل"><i class="fas fa-edit"></i><span class="lbl"></span></button>
+  <button class="btn btn-danger btn-sm" onclick="adminDeleteReq('${esc(r.vid)}')" title="حذف"><i class="fas fa-trash"></i><span class="lbl"></span></button>
 </td>
     </tr>`).join('');
   if (LANG === 'en') applyNode($('reqBody'));
